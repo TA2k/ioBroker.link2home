@@ -1,0 +1,104 @@
+{
+    "common": {
+        "name": "link2home",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Начальная версия",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "zh-cn": "首次出版"
+            }
+        },
+        "title": "Link2Home",
+        "titleLang": {
+            "en": "Link2Home",
+            "de": "Link2Home",
+            "ru": "Link2Главная",
+            "pt": "Link2Home",
+            "nl": "Link2Home",
+            "fr": "Link2Home",
+            "it": "Link2Home",
+            "es": "Link2Inicio",
+            "pl": "Link2Home",
+            "zh-cn": "Link2Home"
+        },
+        "desc": {
+            "en": "Adapter for Link2Home devices",
+            "de": "Adapter für Link2Home-Geräte",
+            "ru": "Адаптер для устройств Link2Home",
+            "pt": "Adaptador para dispositivos Link2Home",
+            "nl": "Adapter voor Link2Home-apparaten",
+            "fr": "Adaptateur pour appareils Link2Home",
+            "it": "Adattatore per dispositivi Link2Home",
+            "es": "Adaptador para dispositivos Link2Home",
+            "pl": "Adapter do urządzeń Link2Home",
+            "zh-cn": "Link2Home 设备适配器"
+        },
+        "authors": ["TA2k <tombox2020@gmail.com>"],
+        "keywords": ["link2home", "rev"],
+        "license": "MIT",
+        "platform": "Javascript/Node.js",
+        "main": "main.js",
+        "icon": "link2home.png",
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/TA2k/ioBroker.link2home/main/admin/link2home.png",
+        "readme": "https://github.com/TA2k/ioBroker.link2home/blob/main/README.md",
+        "loglevel": "info",
+        "mode": "daemon",
+        "type": "iot-systems",
+        "compact": true,
+        "connectionType": "cloud",
+        "dataSource": "poll",
+        "adminUI": {
+            "config": "json"
+        },
+        "dependencies": [
+            {
+                "js-controller": ">=3.3.22"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=5.2.28"
+            }
+        ]
+    },
+    "encryptedNative": ["password"],
+    "protectedNative": ["password"],
+    "native": {
+        "username": "",
+        "password": "",
+        "interval": 10
+    },
+    "objects": [],
+    "instanceObjects": [
+        {
+            "_id": "info",
+            "type": "channel",
+            "common": {
+                "name": "Information"
+            },
+            "native": {}
+        },
+        {
+            "_id": "info.connection",
+            "type": "state",
+            "common": {
+                "role": "indicator.connected",
+                "name": "Device or service connected",
+                "type": "boolean",
+                "read": true,
+                "write": false,
+                "def": false
+            },
+            "native": {}
+        }
+    ]
+}
