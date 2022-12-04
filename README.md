@@ -15,11 +15,21 @@
 
 Adapter for Link2Home devices
 
+**Loginablauf:**
+Die Link2Home Zugangsdaten eingeben
+
+**Steuerung**
+Bisher nur mit Steckdosen getestet. Es können direkt 01 oder 02 Channel mit True oder False
+
+## Fragen und Diskussionen
+
+<https://forum.iobroker.net/topic/60702/test-adapter-link2home>
+
 ## Changelog
 
 ### 0.0.1
 
--   (TA2k) initial release
+- (TA2k) initial release
 
 ## License
 
