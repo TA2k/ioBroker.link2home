@@ -11,6 +11,7 @@ const axios = require("axios").default;
 const Json2iob = require("./lib/json2iob");
 const crypto = require("crypto");
 const qs = require("qs");
+const dgram = require("dgram");
 
 class Link2home extends utils.Adapter {
   /**
@@ -25,6 +26,7 @@ class Link2home extends utils.Adapter {
     this.on("stateChange", this.onStateChange.bind(this));
     this.on("unload", this.onUnload.bind(this));
     this.deviceArray = [];
+    this.devices = {};
 
     this.updateInterval = null;
     this.reLoginTimeout = null;
@@ -32,6 +34,7 @@ class Link2home extends utils.Adapter {
     this.session = {};
     this.json2iob = new Json2iob(this);
     this.requestClient = axios.create();
+    this.sequence = 0x0000;
   }
 
   /**
@@ -55,6 +58,7 @@ class Link2home extends utils.Adapter {
     await this.login();
     if (this.session.token) {
       await this.getDeviceList();
+      this.client = this.intitUDPClient();
       await this.updateDevices();
       this.updateInterval = setInterval(async () => {
         await this.updateDevices();
@@ -120,6 +124,63 @@ class Link2home extends utils.Adapter {
 
     return signature;
   }
+
+  async intitUDPClient() {
+    const client = dgram.createSocket("udp4");
+    client.on("error", (err) => {
+      this.log.error(`client error:\n${err.stack}`);
+      client.close();
+    });
+    client.on("close", () => {
+      this.log.info("UDP client closed");
+    });
+    client.on("message", async (msg, rinfo) => {
+      this.log.debug(`client got: ${msg} from ${rinfo.address}:${rinfo.port}`);
+      const length = msg.length;
+      const header = msg.slice(0, 4);
+      const mac = msg.slice(4, 16);
+      const authCode = msg.slice(28, 32);
+      const sequence = msg.slice(18, 22);
+      const channel = msg.slice(length - 4, length - 2);
+      const value = msg.slice(length - 2, length) || "00";
+      this.log.debug(`Receive ${mac} Channel: ${channel} Value:${value}`);
+      await this.setObjectNotExistsAsync(mac + "." + channel, {
+        type: "state",
+        common: {
+          name: "Channel " + channel,
+          type: "boolean",
+          role: "boolean",
+          def: false,
+          write: true,
+          read: true,
+        },
+        native: {},
+      });
+      await this.setStateAsync(mac + "." + channel, value, true);
+    });
+
+    client.on("listening", () => {
+      const address = client.address();
+      client.setBroadcast(true);
+      client.setTTL(64);
+      client.setMulticastTTL(64);
+      client.setMulticastLoopback(true);
+      this.log.info(`client listening ${address.address}:${address.port}`);
+      for (const device of this.deviceArray) {
+        const data = "a100" + device.macAddress + "0007" + this.sequence.toString(16).padStart(4, "0") + "0000000023";
+        client.send(Buffer.from(data, "hex"), 35932, "192.168.178.255", (err) => {
+          if (err) {
+            this.log.error(JSON.stringify(err));
+          }
+        });
+        this.sequence++;
+      }
+    });
+
+    client.bind(35932);
+    return client;
+  }
+
   async getDeviceList() {
     const data = { token: this.session.token };
     data["sign"] = this.createSign(data);
@@ -140,7 +201,7 @@ class Link2home extends utils.Adapter {
           for (const device of res.data.data) {
             this.log.debug(JSON.stringify(device));
             const id = device.macAddress;
-
+            this.devices[id] = device;
             this.deviceArray.push(device);
             const name = device.deviceName;
 
@@ -159,7 +220,10 @@ class Link2home extends utils.Adapter {
               native: {},
             });
 
-            const remoteArray = [{ command: "Refresh", name: "True = Refresh" }];
+            const remoteArray = [
+              { command: "Refresh", name: "True = Refresh" },
+              { command: "Switch", name: "True = On, False = Off" },
+            ];
             remoteArray.forEach((remote) => {
               this.setObjectNotExists(id + ".remote." + remote.command, {
                 type: "state",
@@ -185,82 +249,14 @@ class Link2home extends utils.Adapter {
   }
 
   async updateDevices() {
-    const statusArray = [
-      {
-        url: "",
-        path: "status",
-        desc: "Status of the device",
-      },
-    ];
-
-    for (const element of statusArray) {
-      for (const device of this.deviceArray) {
-        // const url = element.url.replace("$id", id);
-
-        await this.requestClient({
-          method: "post",
-          url: element.url,
-          headers: {
-            "content-type": "application/json",
-            "user-agent": "ioBroker",
-            accept: "*/*",
-          },
-          data: "",
-        })
-          .then(async (res) => {
-            this.log.debug(JSON.stringify(res.data));
-            if (!res.data) {
-              return;
-            }
-            if (res.data.code != 0) {
-              this.log.error(JSON.stringify(res.data));
-              return;
-            }
-            let data = res.data.result;
-            if (data.result) {
-              data = data.result;
-            }
-
-            const forceIndex = true;
-            const preferedArrayName = null;
-
-            this.json2iob.parse(device.cid + "." + element.path, data, {
-              forceIndex: forceIndex,
-              write: true,
-              preferedArrayName: preferedArrayName,
-              channelName: element.desc,
-            });
-            // await this.setObjectNotExistsAsync(element.path + ".json", {
-            //   type: "state",
-            //   common: {
-            //     name: "Raw JSON",
-            //     write: false,
-            //     read: true,
-            //     type: "string",
-            //     role: "json",
-            //   },
-            //   native: {},
-            // });
-            // this.setState(element.path + ".json", JSON.stringify(data), true);
-          })
-          .catch((error) => {
-            if (error.response) {
-              if (error.response.status === 401) {
-                error.response && this.log.debug(JSON.stringify(error.response.data));
-                this.log.info(element.path + " receive 401 error. Refresh Token in 60 seconds");
-                this.refreshTokenTimeout && clearTimeout(this.refreshTokenTimeout);
-                this.refreshTokenTimeout = setTimeout(() => {
-                  this.refreshToken();
-                }, 1000 * 60);
-
-                return;
-              }
-            }
-            this.log.error(element.url);
-            this.log.error(error);
-            error.response && this.log.error(JSON.stringify(error.response.data));
-          });
-      }
+    for (const device of this.deviceArray) {
+      const data = "a100" + device.macAddress + "0007" + this.sequence.toString(16).padStart(4, "0") + "0000000023";
+      this.client.send(Buffer.from(data, "hex"), 35932, "192.168.178.255", (err) => {
+        if (err) {
+          this.log.error(JSON.stringify(err));
+        }
+      });
+      this.sequence++;
     }
   }
 
@@ -296,44 +292,23 @@ class Link2home extends utils.Adapter {
     if (state) {
       if (!state.ack) {
         const deviceId = id.split(".")[2];
-        let command = id.split(".")[4];
-        const type = command.split("-")[1];
-        command = command.split("-")[0];
-
+        let command = id.split(".")[3];
+        const device = this.devices[deviceId];
         if (id.split(".")[4] === "Refresh") {
           this.updateDevices();
           return;
         }
+        const data =
+          "a104" + deviceId + "00" + this.sequence.toString().padStart(4, "0") + "0a02d2715003" + command + value
+            ? "FF"
+            : "00";
 
-        await this.requestClient({
-          method: "post",
-        })
-          .then((res) => {
-            this.log.info(JSON.stringify(res.data));
-          })
-          .catch(async (error) => {
+        // Send UDP data packet to device to "Lock down the shutter (off)"
+        this.client.send(Buffer.from(data, "hex"), 35932, "192.168.178.255", (error) => {
+          if (error) {
             this.log.error(error);
-            error.response && this.log.error(JSON.stringify(error.response.data));
-          });
-        this.refreshTimeout = setTimeout(async () => {
-          this.log.info("Update devices");
-          await this.updateDevices();
-        }, 10 * 1000);
-      } else {
-        const resultDict = {
-          auto_target_humidity: "setTargetHumidity",
-          enabled: "setSwitch",
-          display: "setDisplay",
-          child_lock: "setChildLock",
-          level: "setLevel-wind",
-        };
-        const idArray = id.split(".");
-        const stateName = idArray[idArray.length - 1];
-        const deviceId = id.split(".")[2];
-        if (resultDict[stateName]) {
-          const value = state.val;
-          await this.setStateAsync(deviceId + ".remote." + resultDict[stateName], value, true);
-        }
+          }
+        });
       }
     }
   }
