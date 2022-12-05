@@ -139,7 +139,7 @@ class Link2home extends utils.Adapter {
     client.on("close", () => {
       this.log.info("UDP client closed");
     });
-    client.on("message", async (msg, rinfo) => {
+    client.on("message", async (msgBuffer, rinfo) => {
       /*
       L2H_CMD_SWITCH         0x01
       L2H_CMD_UNK_02         0x02
@@ -159,19 +159,19 @@ class Link2home extends utils.Adapter {
       L2H_CMD_LOGIN          0x42
       L2H_CMD_CITYID         0x44
       L2H_CMD_ZONEID         0x45
-      L2H_CMD_LUMEN          0x46 // 1 byte data
-      L2H_CMD_COLWHITE       0x47 // 1 byte data
-      L2H_CMD_COLRGB         0x48 // 3 byte data
-      L2H_CMD_MAXBR          0x49 // 1 byte data 00 = low c8 = max
-      L2H_CMD_LUMDUR         0x50 // 1 byte data
-      L2H_CMD_SENSLVL        0x51 // 1 byte data
-      L2H_CMD_LUX            0x52 // 2 byte data
-      L2H_CMD_ONDUR          0x53 // 2 byte data
+      L2H_CMD_LUMEN          0x46 // 1 byte data 
+      L2H_CMD_COLWHITE       0x47 // 1 byte data 
+      L2H_CMD_COLRGB         0x48 // 3 byte data 
+      L2H_CMD_MAXBR          0x49 // 1 byte data 00 = low c8 = max 
+      L2H_CMD_LUMDUR         0x50 // 1 byte data 
+      L2H_CMD_SENSLVL        0x51 // 1 byte data 
+      L2H_CMD_LUX            0x52 // 2 byte data 
+      L2H_CMD_ONDUR          0x53 // 2 byte data 
       L2H_CMD_SENSMODE       0x58
       L2H_CMD_TEST           0x59
-      L2H_CMD_UNK_5B         0x5B // 1 byte data
-      L2H_CMD_LAMPMODE       0x55 // 1 byte data 00 = sensor 01 = on 02 = off 03 = timed 04 = random
-      L2H_CMD_PANIC          0x5C // 1 byte data 00 = off 01 = on
+      L2H_CMD_UNK_5B         0x5B // 1 byte data 
+      L2H_CMD_LAMPMODE       0x55 // 1 byte data 00 = sensor 01 = on 02 = off 03 = timed 04 = random 
+      L2H_CMD_PANIC          0x5C // 1 byte data 00 = off 01 = on 
       L2H_CMD_IDLE           0x61
       L2H_CMD_VERSION        0x62
       L2H_CMD_FWUP           0x63
@@ -181,7 +181,7 @@ class Link2home extends utils.Adapter {
       L2H_PKT_DIRECT         0x00
       L2H_PKT_REQUEST        0x04
       L2H_PKT_RESPONSE       0x02*/
-      msg = msg.toString("hex");
+      msg = msgBuffer.toString("hex");
 
       this.log.debug(`client got: ${msg} from ${rinfo.address}:${rinfo.port}`);
 
@@ -205,7 +205,7 @@ class Link2home extends utils.Adapter {
       this.devices[mac].ip = rinfo.address;
 
       if (commandType === "02" || commandType === "03") {
-        const channels = payload.match(/.{1,4}/g);
+        const channels = payload.match(/.{1,4}/g); //split in 4 byte chunks
         for (const channelResponse of channels) {
           const channel = channelResponse.slice(0, 2);
           const value = channelResponse.slice(2, 4) || "00";
@@ -235,6 +235,7 @@ class Link2home extends utils.Adapter {
       client.setMulticastLoopback(true);
       this.log.info(`client listening ${address.address}:${address.port}`);
       for (const device of this.deviceArray) {
+        //send discovery to receive ip and mac
         const data = "a100" + device.macAddress + "0007" + this.sequence.toString(16).padStart(4, "0") + "0000000023";
         client.send(Buffer.from(data, "hex"), 35932, "255.255.255.255", (err) => {
           if (err) {
