@@ -215,7 +215,7 @@ class Link2home extends utils.Adapter {
             common: {
               name: "Channel " + channel,
               type: "boolean",
-              role: "boolean",
+              role: "button",
               def: false,
               write: true,
               read: true,
@@ -253,7 +253,15 @@ class Link2home extends utils.Adapter {
   async getDeviceList() {
     const data = { token: this.session.token };
     data["sign"] = this.createSign(data);
-
+    /* avaialble endpoints
+      "/api/app/device/doorBell/sub/list
+      /api/app/device/light/onOff/info
+      /api/app/device/light/onOff/set
+      /api/app/device/light/lightAttr/info
+      /api/app/group/maxon/set
+      /api/app/group/maxon/get
+      /api/app/group/list
+    */
     await this.requestClient({
       method: "get",
       url: "https://userdata.link2home.com/api/app/device/list?" + qs.stringify(data),
@@ -296,8 +304,8 @@ class Link2home extends utils.Adapter {
                 common: {
                   name: remote.name || "",
                   type: remote.type || "boolean",
-                  role: remote.role || "boolean",
-                  def: remote.def || false,
+                  role: remote.role || "button",
+                  def: remote.def != null ? remote.def : false,
                   write: true,
                   read: true,
                 },
