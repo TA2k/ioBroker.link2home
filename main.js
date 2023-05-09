@@ -408,6 +408,9 @@ class Link2home extends utils.Adapter {
         const device = this.devices[deviceId];
         if (id.split(".")[4] === "Refresh") {
           this.updateDevices();
+          if (this.config.onlineRefresh) {
+            this.updateViaOnlineApi;
+          }
           return;
         }
         const value = state.val ? "FF" : "00";
