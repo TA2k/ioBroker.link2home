@@ -64,6 +64,9 @@ class Link2home extends utils.Adapter {
       await this.updateDevices();
       this.updateInterval = setInterval(async () => {
         await this.updateDevices();
+        if (this.config.onlineRefresh) {
+          await this.updateViaOnlineApi();
+        }
       }, 30 * 1000);
     }
     this.refreshTokenInterval = setInterval(() => {
@@ -312,6 +315,33 @@ class Link2home extends utils.Adapter {
                 native: {},
               });
             });
+            this.json2iob.parse(id, device, { forceIndex: true });
+          }
+        }
+      })
+      .catch((error) => {
+        this.log.error(error);
+        error.response && this.log.error(JSON.stringify(error.response.data));
+      });
+  }
+  async updateViaOnlineApi() {
+    const data = { token: this.session.token };
+    data["sign"] = this.createSign(data);
+    await this.requestClient({
+      method: "get",
+      url: "https://userdata.link2home.com/api/app/device/list?" + qs.stringify(data),
+      headers: {
+        Accept: "*/*",
+        "Accept-Language": "de-DE;q=1, uk-DE;q=0.9, en-DE;q=0.8",
+        "User-Agent": "Link2Home/1.1.1 (iPhone; iOS 16.1.1; Scale/3.00)",
+      },
+    })
+      .then(async (res) => {
+        this.log.debug(JSON.stringify(res.data));
+        if (res.data.data) {
+          for (const device of res.data.data) {
+            const id = device.macAddress;
+            const name = device.deviceName;
             this.json2iob.parse(id, device, { forceIndex: true });
           }
         }

@@ -36,6 +36,24 @@
         "pl": "Hasło do aplikacji",
         "zh-cn": "应用密码"
       }
+    },
+    "onlineRefresh": {
+      "type": "checkbox",
+      "newLine": true,
+      "sm": 2,
+      "label": {
+        "en": "Update via online api",
+        "de": "Aktualisieren über online api",
+        "ru": "Обновление через онлайн api",
+        "pt": "Atualização via api online",
+        "nl": "Update via online api",
+        "fr": "Mise à jour via api en ligne",
+        "it": "Aggiornamento tramite api online",
+        "es": "Actualización vía api en línea",
+        "pl": "Update za pośrednictwem internetu",
+        "uk": "Оновлення через Інтернет",
+        "zh-cn": "B. 通过网上版更新"
+      }
     }
   }
 }
