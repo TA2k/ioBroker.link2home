@@ -45,7 +45,6 @@
     "keywords": ["link2home", "rev"],
     "license": "MIT",
     "platform": "Javascript/Node.js",
-    "main": "main.js",
     "icon": "link2home.png",
     "enabled": true,
     "extIcon": "https://raw.githubusercontent.com/TA2k/ioBroker.link2home/main/admin/link2home.png",
