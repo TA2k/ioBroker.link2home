@@ -10,9 +10,9 @@
 const utils = require("@iobroker/adapter-core");
 const axios = require("axios").default;
 const Json2iob = require("./lib/json2iob");
-const crypto = require("crypto");
+const crypto = require("node:crypto");
 const qs = require("qs");
-const dgram = require("dgram");
+const dgram = require("node:dgram");
 
 class Link2home extends utils.Adapter {
   /**
