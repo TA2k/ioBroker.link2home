@@ -27,6 +27,9 @@ Bisher nur mit Steckdosen getestet. Es können direkt 01 oder 02 Channel mit Tru
 
 ## Changelog
 
+### **WORK IN PROGRESS**
+- (iobroker-bot) Adapter requires node.js >= 20 now.
+
 ### 0.0.1
 
 - (TA2k) initial release
