@@ -31,6 +31,8 @@ Bisher nur mit Steckdosen getestet. Es können direkt 01 oder 02 Channel mit Tru
 
 - (TA2k) initial release
 
+[Older changelogs can be found there](CHANGELOG_OLD.md)
+
 ## License
 
 MIT License
