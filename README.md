@@ -27,6 +27,10 @@ Bisher nur mit Steckdosen getestet. Es können direkt 01 oder 02 Channel mit Tru
 
 ## Changelog
 
+
+### **WORK IN PROGRESS**
+- (ioBroker-Bot) Adapter requires js-controller >= 6.0.11 now.
+
 ### 0.0.1
 
 - (TA2k) initial release
